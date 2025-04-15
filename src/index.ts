@@ -1,12 +1,11 @@
-import noUnusedStylesRule from "./rules/no-unused-styles";
+import noUnusedStylesRule from "./rules/no-unused-styles.js";
 
 export default {
-  rules: {
-    "no-unused-styles": noUnusedStylesRule,
-  },
   configs: {
     recommended: {
-      plugins: ["react-native-unused-styles"],
+      plugins: {
+        "react-native-unused-styles": noUnusedStylesRule,
+      },
       rules: {
         "react-native-unused-styles/no-unused-styles": "warn",
       },

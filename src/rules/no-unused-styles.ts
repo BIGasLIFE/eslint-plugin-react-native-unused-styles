@@ -210,4 +210,8 @@ export const noUnusedStylesRule: Rule.RuleModule = {
   },
 };
 
-export default noUnusedStylesRule;
+export default {
+  rules: {
+    "no-unused-styles": noUnusedStylesRule,
+  },
+};
