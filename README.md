@@ -27,7 +27,7 @@ export default defineConfig([
 
 ### no-unused-styles
 
-SDetects styles defined with StyleSheet.create that are not used in the component.
+Detects styles defined with StyleSheet.create that are not used in the component.
 Remove unused styles to keep your code clean.
 
 ```jsx

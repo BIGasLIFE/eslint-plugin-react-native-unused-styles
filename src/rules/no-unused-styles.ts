@@ -1,35 +1,35 @@
 /**
- * @fileoverview ESLintプラグイン - React Native の未使用スタイルを検出（関数呼び出し対応版）
+ * @fileoverview ESLint plugin - Detects unused styles in React Native (supports function calls)
  */
 import { Rule } from "eslint";
 
-// no-unused-styles ルール定義
+// no-unused-styles rule definition
 export const noUnusedStylesRule: Rule.RuleModule = {
   meta: {
     type: "suggestion",
     docs: {
       description:
-        "React NativeのStyleSheet.createで定義されたが使用されていないスタイルを検出します",
+        "Detects styles defined in StyleSheet.create in React Native that are not used",
       recommended: true,
     },
     fixable: undefined,
-    schema: [], // オプションなし
+    schema: [], // No options
   },
   create: function (context) {
-    // 定義されたスタイル名とノードのマップ
+    // Map of defined style names to their AST nodes
     const definedStyles = new Map<string, Rule.Node>(); // styleName -> node
-    // 使用されたスタイル名のセット
+    // Set of used style names
     const usedStyles = new Set<string>();
-    // StyleSheet変数から定義されたスタイルへのマッピング
+    // Mapping from StyleSheet variables to their defined style names
     const styleSheetMap = new Map<string, Set<string>>(); // stylesheetVarName -> Set of styleNames
 
-    // スタイル使用のチェックヘルパー関数
+    // Helper function to extract style names from nodes
     function extractStyleNames(node: Rule.Node): string[] {
       if (!node) return [];
 
       const styleNames: string[] = [];
 
-      // styles.container のようなケース
+      // Case like styles.container
       if (
         node.type === "MemberExpression" &&
         node.object &&
@@ -39,7 +39,7 @@ export const noUnusedStylesRule: Rule.RuleModule = {
       ) {
         styleNames.push((node.property as any).name);
       }
-      // [styles.container, styles.text] のようなケース
+      // Case like [styles.container, styles.text]
       else if (node.type === "ArrayExpression") {
         (node as any).elements.forEach((elem: any) => {
           if (elem) {
@@ -48,12 +48,12 @@ export const noUnusedStylesRule: Rule.RuleModule = {
           }
         });
       }
-      // スプレッド構文のケース
+      // Spread syntax
       else if (node.type === "SpreadElement" && (node as any).argument) {
         const names = extractStyleNames((node as any).argument);
         styleNames.push(...names);
       }
-      // 条件演算子のケース
+      // Conditional expression
       else if (node.type === "ConditionalExpression") {
         const consequentNames = extractStyleNames((node as any).consequent);
         const alternateNames = extractStyleNames((node as any).alternate);
@@ -63,16 +63,15 @@ export const noUnusedStylesRule: Rule.RuleModule = {
 
         styleNames.push(...consequentNames, ...alternateNames, ...testNames);
       }
-      // オブジェクト全体が渡される場合 - すべてのスタイルが使用されたとみなす
+      // When the entire object is passed — treat as all styles being used
       else if (
         node.type === "Identifier" &&
         styleSheetMap.has((node as any).name)
       ) {
-        // styleSheet変数に含まれるすべてのスタイル名を追加
         const names = Array.from(styleSheetMap.get((node as any).name) || []);
         styleNames.push(...names);
       }
-      // オブジェクト式での処理（インラインスタイルやスプレッド構文）
+      // Handle ObjectExpression (e.g., inline styles, spread)
       else if (node.type === "ObjectExpression") {
         (node as any).properties.forEach((prop: any) => {
           if (prop.type === "SpreadElement") {
@@ -84,19 +83,19 @@ export const noUnusedStylesRule: Rule.RuleModule = {
           }
         });
       }
-      // Propertyノードを直接処理
+      // Handle Property nodes directly
       else if (node.type === "Property" && (node as any).value) {
         const names = extractStyleNames((node as any).value);
         styleNames.push(...names);
       }
-      // LogicalExpressionの処理（&& や || 演算子）
+      // Handle LogicalExpression (e.g., &&, ||)
       else if (node.type === "LogicalExpression") {
         const leftNames = extractStyleNames((node as any).left);
         const rightNames = extractStyleNames((node as any).right);
 
         styleNames.push(...leftNames, ...rightNames);
       }
-      // その他の式の処理
+      // Handle other expressions
       else if (
         node.type === "BinaryExpression" ||
         node.type === "UnaryExpression" ||
@@ -120,10 +119,10 @@ export const noUnusedStylesRule: Rule.RuleModule = {
     }
 
     return {
-      // StyleSheet.createの呼び出しを検出
+      // Detect calls to StyleSheet.create
       "VariableDeclarator[init.callee.object.name='StyleSheet'][init.callee.property.name='create']":
         function (node: Rule.Node) {
-          // スタイル定義を収集
+          // Collect style definitions
           if (
             (node as any).init &&
             (node as any).init.arguments &&
@@ -143,34 +142,26 @@ export const noUnusedStylesRule: Rule.RuleModule = {
                   (prop.key.name ||
                     (prop.key.value && typeof prop.key.value === "string"))
                 ) {
-                  // キーが識別子かリテラルかで処理を分ける
                   const styleName = prop.key.name || prop.key.value;
-                  // スタイル名とノードを保存
                   definedStyles.set(styleName, prop);
-                  // このStyleSheet変数に関連付けられたスタイル名を記録
                   styleNamesInThisSheet.add(styleName);
                 }
               });
             }
 
-            // StyleSheet変数名からスタイル名のセットへのマッピングを保存
             styleSheetMap.set(styleSheetVarName, styleNamesInThisSheet);
           }
         },
 
-      // スタイルの使用を検出 - より包括的なセレクタを使用
+      // Detect style usage in JSX
       JSXAttribute: function (node: Rule.Node) {
-        // style属性またはその派生形（contentContainerStyleなど）をチェック
         if (
           (node as any).name &&
           (node as any).name.name &&
           /[sS]tyle$/.test((node as any).name.name)
         ) {
           if ((node as any).value && (node as any).value.expression) {
-            // JSX式の中のスタイル参照を分析
             const names = extractStyleNames((node as any).value.expression);
-
-            // 使用されたスタイル名をセットに追加
             names.forEach((name) => {
               usedStyles.add(name);
             });
@@ -178,14 +169,12 @@ export const noUnusedStylesRule: Rule.RuleModule = {
         }
       },
 
-      // スタイルシートの分割代入を検出
+      // Detect destructuring assignments from StyleSheet
       "VariableDeclarator[init.type='Identifier']": function (node: Rule.Node) {
         const initName = (node as any).init.name;
         if (styleSheetMap.has(initName)) {
-          // 分割代入の場合
           if ((node as any).id.type === "ObjectPattern") {
             (node as any).id.properties.forEach((prop: any) => {
-              // 各プロパティを使用済みとしてマーク
               if (prop.key && prop.key.name) {
                 usedStyles.add(prop.key.name);
               }
@@ -194,16 +183,15 @@ export const noUnusedStylesRule: Rule.RuleModule = {
         }
       },
 
-      // 関数の戻り値からスタイル参照を検出
+      // Detect style references from return statements
       ReturnStatement: function (node: Rule.Node) {
         if ((node as any).argument) {
           const names = extractStyleNames((node as any).argument);
-          // 抽出したスタイル名を使用済みとしてマーク
           names.forEach((name) => usedStyles.add(name));
         }
       },
 
-      // 変数への代入からもスタイル参照を検出
+      // Detect style references from assignment expressions
       AssignmentExpression: function (node: Rule.Node) {
         if ((node as any).right) {
           const names = extractStyleNames((node as any).right);
@@ -211,14 +199,13 @@ export const noUnusedStylesRule: Rule.RuleModule = {
         }
       },
 
-      // プログラム終了時に未使用スタイルを報告
+      // Report unused styles at the end of the program
       "Program:exit": function () {
-        // 未使用スタイルを報告
         definedStyles.forEach((node, styleName) => {
           if (!usedStyles.has(styleName)) {
             context.report({
               node: node,
-              message: `スタイル '${styleName}' は定義されていますが使用されていません。`,
+              message: `Style '${styleName}' is defined but never used.`,
             });
           }
         });
