@@ -3,7 +3,7 @@
  */
 
 import { RuleTester } from "eslint";
-import { noUnusedStylesRule } from "../../rules/no-unused-styles";
+import { noUnusedStylesRule } from "../../rules/no-unused-styles.js";
 import path from "path";
 
 // テスト設定
