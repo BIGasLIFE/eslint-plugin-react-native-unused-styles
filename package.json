@@ -1,6 +1,10 @@
 {
   "name": "eslint-plugin-react-native-unused-styles",
-  "version": "0.1.9",
+  "version": "0.1.10",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BIGasLIFE/eslint-plugin-react-native-unused-styles"
+  },
   "description": "ESLint plugin for detecting unused styles in React Native",
   "main": "dist/index.js",
   "type": "module",
