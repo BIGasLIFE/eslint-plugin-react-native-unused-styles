@@ -1,56 +1,40 @@
 # eslint-plugin-react-native-unused-styles
 
-React Native のスタイル関連の問題を検出する ESLint プラグイン
+An ESLint plugin that detects style-related issues in React Native.
 
-## インストール
+## Installation
 
 ```bash
 npm install eslint eslint-plugin-react-native-unused-styles --save-dev
 ```
 
-## 設定
+## Configuration
 
-### ESLint Flat Config (推奨)
+### ESLint Flat Config
 
 ```js
-// eslint.config.js
+// eslint.config.mjs
+import { defineConfig } from "eslint/config";
 import reactNativeUnusedStyles from "eslint-plugin-react-native-unused-styles";
 
-export default [
+export default defineConfig([
+  { files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"] },
   reactNativeUnusedStyles.configs.recommended,
-  {
-    files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
-    languageOptions: {
-      // 必要な言語オプション
-    },
-  },
-];
+]);
 ```
 
-### 従来の設定 (.eslintrc.js)
-
-```js
-module.exports = {
-  plugins: ["react-native-unused-styles"],
-  rules: {
-    "react-native-unused-styles/no-unused-styles": "warn",
-  },
-};
-```
-
-## ルール
+## Rules
 
 ### no-unused-styles
 
-StyleSheet.create で定義されたが、コンポーネント内で使用されていないスタイルを検出します。
-
-不要なスタイルを削除して、コードをクリーンに保ちます。
+SDetects styles defined with StyleSheet.create that are not used in the component.
+Remove unused styles to keep your code clean.
 
 ```jsx
 // ❌ Bad
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  unused: { margin: 10 }, // 使用されていない
+  unused: { margin: 10 }, // Unused
 });
 
 return <View style={styles.container} />;

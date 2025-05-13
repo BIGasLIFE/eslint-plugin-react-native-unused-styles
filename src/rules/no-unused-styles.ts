@@ -1,5 +1,5 @@
 /**
- * @fileoverview ESLintプラグイン - React Native の未使用スタイルを検出
+ * @fileoverview ESLintプラグイン - React Native の未使用スタイルを検出（関数呼び出し対応版）
  */
 import { Rule } from "eslint";
 
@@ -191,6 +191,23 @@ export const noUnusedStylesRule: Rule.RuleModule = {
               }
             });
           }
+        }
+      },
+
+      // 関数の戻り値からスタイル参照を検出
+      ReturnStatement: function (node: Rule.Node) {
+        if ((node as any).argument) {
+          const names = extractStyleNames((node as any).argument);
+          // 抽出したスタイル名を使用済みとしてマーク
+          names.forEach((name) => usedStyles.add(name));
+        }
+      },
+
+      // 変数への代入からもスタイル参照を検出
+      AssignmentExpression: function (node: Rule.Node) {
+        if ((node as any).right) {
+          const names = extractStyleNames((node as any).right);
+          names.forEach((name) => usedStyles.add(name));
         }
       },
 

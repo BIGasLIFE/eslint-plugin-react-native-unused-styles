@@ -3,11 +3,15 @@
  */
 
 import { RuleTester } from "eslint";
-import rule from "../../rules/no-unused-styles";
+import { noUnusedStylesRule } from "../../rules/no-unused-styles";
+import path from "path";
 
 // テスト設定
 const ruleTester = new RuleTester({
-  parser: require.resolve("@typescript-eslint/parser"),
+  parser: path.resolve(
+    __dirname,
+    "../../../node_modules/@typescript-eslint/parser/dist"
+  ),
   parserOptions: {
     ecmaVersion: 2020,
     sourceType: "module",
@@ -18,7 +22,7 @@ const ruleTester = new RuleTester({
 });
 
 // テスト実行
-ruleTester.run("no-unused-styles", rule, {
+ruleTester.run("no-unused-styles", noUnusedStylesRule, {
   valid: [
     // 有効なケース - スタイルが使用されている
     {
@@ -52,6 +56,25 @@ ruleTester.run("no-unused-styles", rule, {
           },
           padding: {
             padding: 10,
+          },
+        });
+      `,
+    },
+    {
+      code: `
+        import { StyleSheet } from 'react-native';
+
+        const getStyle = () => {
+          return styles.container;
+        };
+        
+        const Component = () => {
+          return <View style={getStyle()} />;
+        };
+        
+        const styles = StyleSheet.create({
+          container: {
+            flex: 1,
           },
         });
       `,
